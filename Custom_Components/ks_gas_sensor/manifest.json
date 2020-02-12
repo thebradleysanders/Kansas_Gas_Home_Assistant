@@ -1,0 +1,9 @@
+{
+    "domain": "ks_gas_sensor",
+    "name": "Kansas Gas Sensor",
+    "documentation": "https://github.com/thebradleysanders/Kansas_Gas_Home_Assistant",
+    "dependencies": [],
+    "codeowners": ["Brad Sanders"],
+    "requirements": ["requests"]
+  }
+  
