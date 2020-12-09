@@ -29,7 +29,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
       ks_gas_sensor(username=username, password=password, account=account, getattribute="Address", interval=SCAN_INTERVAL),
       ks_gas_sensor(username=username, password=password, account=account, getattribute="Last Payment Date", interval=SCAN_INTERVAL),
       ks_gas_sensor(username=username, password=password, account=account, getattribute="Last Payment", interval=SCAN_INTERVAL),
-      ks_gas_sensor(username=username, password=password, account=account, getattribute="Ammount Due", interval=SCAN_INTERVAL),
+      ks_gas_sensor(username=username, password=password, account=account, getattribute="Amount Due", interval=SCAN_INTERVAL),
       ks_gas_sensor(username=username, password=password, account=account, getattribute="Due Date", interval=SCAN_INTERVAL),
       ks_gas_sensor(username=username, password=password, account=account, getattribute="Past Due", interval=SCAN_INTERVAL)
 	], True) 
