@@ -10,6 +10,7 @@ REQUIREMENTS = ['requests']
 
 CONF_USERNAME="username"
 CONF_PASSWORD="password"
+CONF_ACCOUNT_NUM="account"
 
 ICON = 'mdi:gas-cylinder'
 
@@ -20,20 +21,25 @@ SCAN_INTERVAL = timedelta(hours=12)
 def setup_platform(hass, config, add_entities, discovery_info=None):
     username = str(config.get(CONF_USERNAME))
     password = str(config.get(CONF_PASSWORD))
+    account = str(config.get(CONF_ACCOUNT_NUM))
     add_entities([
-	  ks_gas_sensor(username=username, password=password, getattribute="status", interval=SCAN_INTERVAL),
-      ks_gas_sensor(username=username, password=password, getattribute="lastpayment", interval=SCAN_INTERVAL),
-      ks_gas_sensor(username=username, password=password, getattribute="creditRating", interval=SCAN_INTERVAL),
-      ks_gas_sensor(username=username, password=password, getattribute="dueDate", interval=SCAN_INTERVAL),
-      ks_gas_sensor(username=username, password=password, getattribute="consumption", interval=SCAN_INTERVAL),
-      ks_gas_sensor(username=username, password=password, getattribute="address", interval=SCAN_INTERVAL)
+	  ks_gas_sensor(username=username, password=password, account=account, getattribute="Status", interval=SCAN_INTERVAL),
+      ks_gas_sensor(username=username, password=password, account=account, getattribute="Credit Rating", interval=SCAN_INTERVAL),
+      ks_gas_sensor(username=username, password=password, account=account, getattribute="Consumption", interval=SCAN_INTERVAL),
+      ks_gas_sensor(username=username, password=password, account=account, getattribute="Address", interval=SCAN_INTERVAL),
+      ks_gas_sensor(username=username, password=password, account=account, getattribute="Last Payment Date", interval=SCAN_INTERVAL),
+      ks_gas_sensor(username=username, password=password, account=account, getattribute="Last Payment", interval=SCAN_INTERVAL),
+      ks_gas_sensor(username=username, password=password, account=account, getattribute="Ammount Due", interval=SCAN_INTERVAL),
+      ks_gas_sensor(username=username, password=password, account=account, getattribute="Due Date", interval=SCAN_INTERVAL),
+      ks_gas_sensor(username=username, password=password, account=account, getattribute="Past Due", interval=SCAN_INTERVAL)
 	], True) 
 
 
 class ks_gas_sensor(Entity):
-    def __init__(self, username, password, getattribute, interval):
+    def __init__(self, username, password, account, getattribute, interval):
         self._username = username
         self._password = password
+        self._account = account
         self._getattribute = getattribute
         self.update = Throttle(interval)(self._update)
 
@@ -55,52 +61,74 @@ class ks_gas_sensor(Entity):
 
             r = requests.Session()
             loginData = r.post(url, data=data, headers=headers, verify=True)
-            #grab data
-            accessToken = (loginData.json())['accessToken']
-            billingAccountNumber = (loginData.json())['registeredUser']['userInfo']['billingAccounts'][1]['billingAccountNumber']
+            
+            if (loginData):
+                #grab data
+                accessToken = (loginData.json())['accessToken']
+                
+                if (len(accessToken) > 0 ):
+                
+                    if (len(self._account) > 5):
+                        billingAccountNumber = self._account
+                    else:
+                        #pull first account number on account
+                        billingAccountNumber = (loginData.json())['registeredUser']['userInfo']['billingAccounts'][0]['billingAccountNumber']
+                        
+                    #get account summery
+                    url = "https://api.kansasgasservice.com/api/getaccountsummary"
+                    data = '{"billingAccountNumber":"' + billingAccountNumber + '","auditInfo":{"csrId":null,"isCSR":false,"registeredUsername":"' + self._username + '","ldcProvider":"KGS","isApp":false,"isMobile":true,"isWeb":false}}'
+                    headers = {
+                      'Accept': '*/*',
+                      'Content-Type': 'application/json',
+                      'Host': 'api.kansasgasservice.com',
+                      'Origin': 'https://www.kansasgasservice.com',
+                      'Referer': 'https://www.kansasgasservice.com/',
+                      'Content-Length': str(len(data)),
+                      'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0.1; Nexus 10 Build/MOB31T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.87 Safari/537.36',
+                      'Accept-Language': 'en-US,en;q=0.9',
+                      'Authorization-Token': accessToken
+                    }
 
-
-            #get account summery
-            url = "https://api.kansasgasservice.com/api/getaccountsummary"
-            data = '{"billingAccountNumber":"' + billingAccountNumber + '","auditInfo":{"csrId":null,"isCSR":false,"registeredUsername":"' + self._username + '","ldcProvider":"KGS","isApp":false,"isMobile":true,"isWeb":false}}'
-            headers = {
-              'Accept': '*/*',
-              'Content-Type': 'application/json',
-              'Host': 'api.kansasgasservice.com',
-              'Origin': 'https://www.kansasgasservice.com',
-              'Referer': 'https://www.kansasgasservice.com/',
-              'Content-Length': str(len(data)),
-              'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0.1; Nexus 10 Build/MOB31T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.87 Safari/537.36',
-              'Accept-Language': 'en-US,en;q=0.9',
-              'Authorization-Token': accessToken
-            }
-
-            r = requests.Session()
-            loginData = r.post(url, data=data, headers=headers, verify=True)
-
-            if self._getattribute=="status":
-              self._state = (loginData.json())['accountStatus']
-            if self._getattribute=="lastpayment":
-              self._state = (loginData.json())['lastPaymentAmount']
-            if self._getattribute=="creditRating":
-              self._state = (loginData.json())['creditRating']
-            if self._getattribute=="dueDate":
-              self._state = (loginData.json())['currentBill']['dueDate']
-            if self._getattribute=="consumption":
-              self._state = (loginData.json())['services'][0]['consumption']
-            if self._getattribute=="address":
-              self._state = (loginData.json())['serviceAddress']['streetAddress1']
-			
-   
-            self._attributes = {}
-            self._attributes['last_update'] = datetime.now()
+                    r = requests.Session()
+                    loginData = r.post(url, data=data, headers=headers, verify=True)
+                    if (loginData):      
+                        if self._getattribute=="Status":
+                          self._state = (loginData.json())['accountStatus']
+                        if self._getattribute=="Credit Rating":
+                          self._state = (loginData.json())['creditRating']
+                        if self._getattribute=="Consumption":
+                          self._state = str((loginData.json())['services'][0]['consumption'])
+                        if self._getattribute=="Address":
+                          self._state = str((loginData.json())['serviceAddress']['streetAddress1'])
+                        if self._getattribute=="Last Payment Date":
+                          date_time = datetime.strptime(loginData.json()['lastPaymentDate'].split("T")[0], "%Y-%m-%d")
+                          self._state = str(date_time.strftime("%m/%d/%y"))
+                        if self._getattribute=="Last Payment":
+                          self._state = str((loginData.json())['lastPaymentAmount'])
+                        if self._getattribute=="Amount Due":
+                          self._state = str((loginData.json())['currentBill']['amountDue'])                          
+                        if self._getattribute=="Due Date":
+                          date_time = datetime.strptime(loginData.json()['currentBill']['dueDate'].split("T")[0], "%Y-%m-%d")
+                          self._state = str(date_time.strftime("%m/%d/%y"))
+                        if self._getattribute=="Past Due":
+                          self._state = str((loginData.json())['currentBill']['amountPastDue'])
+                    else:
+                      self._state = "Unknown"
+                      
+                    self._attributes = {}
+                    self._attributes['last_update'] = datetime.now()
+                else:
+                  _LOGGER.error("Error getting account login token.")
+            else:
+              _LOGGER.error("Error logging in.")
+              
         except Exception as err:
             _LOGGER.error(err)
 
 
     @property
     def name(self):
-        name = "ks_gas_sensor_" +  self._getattribute
+        name = "KS Gas " + self._getattribute
         return name
 
     @property
