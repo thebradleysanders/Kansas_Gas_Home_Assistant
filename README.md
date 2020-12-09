@@ -9,12 +9,12 @@ sensor:
 ```
 
 #### Supported Sensors:
-      * Status
-      * Credit Rating
-      * Consumption
-      * Address
-      * Last Payment Date
-      * Last Payment
-      * Ammount Due
-      * Due Date
-      * Past Due
+   * Status
+   * Credit Rating
+   * Consumption
+   * Address
+   * Last Payment Date
+   * Last Payment
+   * Ammount Due
+   * Due Date
+   * Past Due
