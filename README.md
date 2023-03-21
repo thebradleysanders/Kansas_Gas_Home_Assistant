@@ -1,3 +1,5 @@
+ <h1 style="color:#ff0000">This integration is currently not working due to security improvments from KS Gas</h1>
+
 ## Kansas Gas Sensor For Home Assistant
 
 ```yaml
