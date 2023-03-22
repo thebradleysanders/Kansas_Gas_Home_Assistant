@@ -43,7 +43,7 @@ class Client:
             method: str,
             resource: str,
             headers: dict = None,
-            json: {}
+            json: dict = None,
             ) -> dict:
         if not headers:
             headers = {}
