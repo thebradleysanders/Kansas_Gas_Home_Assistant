@@ -49,7 +49,7 @@ class Client:
         if not headers:
             headers = {}
         """Need to specify encoding when getting Achievements or Places endpoint"""
-        if "achievements" or "places" in resource:
+        if "" in resource:
             async with self._websession.request(
                     method,
                     self.url(config, resource),
