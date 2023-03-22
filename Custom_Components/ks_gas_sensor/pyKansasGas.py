@@ -43,26 +43,18 @@ class Client:
             method: str,
             resource: str,
             headers: dict = None,
-            data: dict = None
+            json: {}
             ) -> dict:
         if not headers:
             headers = {}
-        """Need to specify encoding when getting Achievements or Places endpoint"""
-        if "" in resource:
-            async with self._websession.request(
-                    method,
-                    self.url(config, resource),
-                    headers=headers,
-                    data=data) as r:
-                r.raise_for_status()
-                return await r.json(encoding='UTF-8')
+
         async with self._websession.request(
                 method,
                 self.url(config, resource),
                 headers=headers,
-                data=data) as r:
+                json=json) as r:
             r.raise_for_status()
-            return await r.json()
+            return await r.json(encoding='UTF-8')
 
 
     """
@@ -74,7 +66,22 @@ class Client:
                 method='post',
                 resource=resource,
                 headers=self.headers(config, token)
-                )
+                json={
+                    "auditInfo": {
+                        "appVersion": "65f2a17a",
+                        "csrId": null,
+                        "isCSR": false,
+                        "registeredUsername": self._username,
+                        "ldcProvider": "KGS",
+                        "sessionId": "",
+                        "isApp": false,
+                        "isMobile": false,
+                        "isWeb": false
+                    },
+                    "ldcProvider": "KGS",
+                    "culture": "en-US",
+                    "billingAccountNumber": self._accountNumber
+                })
 
 
     """
@@ -86,10 +93,22 @@ class Client:
                 config,
                 method='post',
                 resource='login',
-                data={
+                json={
+                    "auditInfo": {
+                        "appVersion": "65f2a17a",
+                        "csrId": null,
+                        "isCSR": false,
+                        "ldcProvider": "KGS",
+                        "sessionId": "",
+                        "isApp": false,
+                        "isMobile": false,
+                        "isWeb": false
+                    },
+                    "ldcProvider": "KGS",
+                    "culture": "en-US",
                     "email": self._username,
                     "password": self._password
-                }))['auth_token']
+                }))
 
     async def get_accountsummary(self):
         return await self.get_resource(self._config, self._token, 'getaccountsummary')
@@ -113,8 +132,10 @@ class Client:
     async def async_init(self, ksgas_const = KSGAS_CONST) -> None:
         self._config = ksgas_const
         if self._token is None:
-            self._token = await self.login(self._config)
-
+            loginData = await self.login(self._config)
+            self._token = loginData['accessToken']
+            self._accountNumber = loginData['registeredUser']['userInfo']['defaultAccountNumber']
+        
     def __init__(
             self,
             username: str,
@@ -125,4 +146,5 @@ class Client:
         self._token = None
         self._username = username
         self._password = password
+        self._accountNumber = None
         self._websession = websession
