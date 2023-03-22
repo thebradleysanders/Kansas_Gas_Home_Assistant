@@ -3,7 +3,7 @@ from aiohttp import ClientSession, client_exceptions
 KSGAS_CONST = {
         "proto": "https",
         "remote_host": "api.kansasgasservice.com",
-        "endpoint": "getaccountsummary"
+        "endpoint": "api"
 }
 
 
@@ -31,7 +31,6 @@ class Client:
             "User-Agent": "Winston/3.9.0 (iPhone; iOS 13.5; Build:2399; Scale/3.0)",
             "Authorization-Token": "%s" % token
     }
-
 
     """
     Performs AIO request. Covers all verbs.
@@ -88,7 +87,7 @@ class Client:
                 method='post',
                 resource='login',
                 data={
-                    "username": self._username,
+                    "email": self._username,
                     "password": self._password
                 }))['auth_token']
 
